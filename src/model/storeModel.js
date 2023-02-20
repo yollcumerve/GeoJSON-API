@@ -2,19 +2,16 @@ const mongoose = require('mongoose')
 const geocoder = require('../utils/geocoder')
 const dbConnection = require('../module/dbConnection')
 const StoreSchema = new mongoose.Schema({
-    storeId: {
+    storeName : {
         type: String,
-        required: [true, 'Please add a store Id'],
-        unique: true,
-        trim: true,
-        maxlength: [10, 'StoreId must be less than 10 chars']
-
+        required: true
     },
-    adress: {
+    address: {
         type: String,
-        required: [true, 'Please add an adress']
+        required: [true, 'Please add an address']
     },
     location: {
+        //it has to have coordinates, type and coordinates are two required fields
         type: {
             type: String,
             enum: ['Point'],
@@ -22,9 +19,14 @@ const StoreSchema = new mongoose.Schema({
         },
         coordinates: {
             type: [Number],
-           
+           index: '2dsphere'
         },
-        formattedAdress: String
+        formattedAddress: String,
+        street: String,
+        city: String,
+        state: String,
+        zipcode: String,
+        country: String
     },
     createdAt: {
         type: Date,
@@ -35,15 +37,20 @@ const StoreSchema = new mongoose.Schema({
 
 // GEOCODE & CREATE LOCATION
 StoreSchema.pre('save', async function(next){
-    const loc = await geocoder.geocode(this.adress)
+    const loc = await geocoder.geocode(this.address)
    this.location = {
     type:'Point',
     coordinates: [loc[0].longitude, loc[0].latitude],
-    formattedAdress: loc[0].formattedAddress
+    formattedAddress: loc[0].formattedAddress,
+    street: loc[0].street,
+    city: loc[0].city,
+    state: loc[0].state,
+    zipcode: loc[0].zipcode,
+    country: loc[0].country
    }
 
-   // Do not save adress
-   this.adress = undefined
+   // Do not save address in db
+   this.address = undefined
    next()
 })
 
